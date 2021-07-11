@@ -1,0 +1,8 @@
+pkg/
+pkg.zip
+.env/
+env/
+update.sh
+config.yml
+status.txt
+__pycache__/
