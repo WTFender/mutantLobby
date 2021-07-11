@@ -5,6 +5,7 @@ import time
 import boto3
 import telebot
 import discord
+import requests
 from discord_slash import SlashCommand
 from discord_slash.model import SlashCommandOptionType, ButtonStyle
 from discord_slash.utils.manage_commands import create_option
@@ -22,6 +23,12 @@ LOBBIES = boto3.resource('dynamodb').Table(CFG['TABLE'])
 client = discord.Client(intents=discord.Intents.all())
 slash = SlashCommand(client, sync_commands=True)
 bot = telebot.TeleBot(CFG['T_TOKEN'])
+
+
+def notifyDiscord(payload):
+    for hook in CFG['D_WEBHOOKS']:
+        r = requests.post(hook, json=payload)
+        print(r.status_code)
 
 
 def notifyChannel(msg=''):
@@ -110,6 +117,7 @@ async def on_component(ctx: ComponentContext):
             msg = f'`{user}` joined {lobby["name"]}.'
             await ctx.send(msg, hidden=True)
             notifyChannel(msg=msg)
+            notifyDiscord({'username': lobby['name'], 'content': f'`{user}` joined'})
 
     elif action == 'view':
         joined = ', '.join(lobby['joined'])
@@ -159,13 +167,13 @@ async def _createLobby(ctx, mutant2=None, mutant3=None, mutant4=None, public=Fal
         create_button(
             custom_id=f'{lobby["lobbyId"]}-join',
             style=ButtonStyle.blue,
-            label="Join"
-        ),
-        create_button(
-            custom_id=f'{lobby["lobbyId"]}-view',
-            style=ButtonStyle.grey,
-            label="View"
+            label="Join Lobby"
         )
+#        create_button(
+#            custom_id=f'{lobby["lobbyId"]}-view',
+#            style=ButtonStyle.grey,
+#            label="View"
+#        )
     ]
 
     msg = f'`{lobby["creator"]}` created `{lobby["name"]}`'
@@ -178,6 +186,8 @@ async def _createLobby(ctx, mutant2=None, mutant3=None, mutant4=None, public=Fal
             continue
         msg = f'`{j}` joined `{lobby["name"]}`'
         #await ctx.send(msg)
+        payload = {'username': lobby['name'], 'content': f'`{j}` joined'}
+        notifyDiscord(payload)
         notifyChannel(msg=msg)
 
 

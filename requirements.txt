@@ -3,3 +3,4 @@ discord-py-slash-command
 pyTelegramBotAPI
 pyyaml
 boto3
+requests

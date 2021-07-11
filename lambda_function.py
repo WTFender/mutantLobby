@@ -5,6 +5,7 @@ from util import rand_lobby_name
 import yaml
 import boto3
 import telebot
+import requests
 
 with open('config.yml', 'r') as cfg:
     try:
@@ -17,6 +18,10 @@ LOG.setLevel(logging.INFO)
 LOBBIES = boto3.resource('dynamodb').Table(CFG['TABLE'])
 bot = telebot.TeleBot(CFG['T_TOKEN'])
 
+
+def notifyDiscord(msg=''):
+    for hook in CFG['D_WEBHOOKS']:
+        r = requests.post(hook, json=msg)
 
 
 def error(code=500):
@@ -70,6 +75,7 @@ def join_lobby(lobby, slotId):
     LOBBIES.put_item(Item=lobby)
     msg = f'`{user}` joined `{lobby["name"]}`'
     notifyChannel(msg=msg)
+    notifyDiscord({'username': lobby['name'], 'content': f'`{user}` joined'})
 
     return ok('%s joined the lobby!' % user)
 
