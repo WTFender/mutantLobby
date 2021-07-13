@@ -42,12 +42,16 @@ class Lobby:
 
 
     def _save(self):
-        l = {}
-        for attr in self.__dict__:
-            val = getattr(self, attr)
-            if type(val) in [int, str, dict, list, bool]:
-                l[attr] = val
-        self.db.put_item(Item=l)
+        self.db.put_item(Item={
+            'creator': self.creator,
+            'joined': self.joined,
+            'lobbyId': self.lobbyId,
+            'name': self.name,
+            'public': self.public,
+            'slots': self.slots,
+            'max': self.max,
+            'expires': self.expires
+        })
 
 
     def _create_slots(self):
