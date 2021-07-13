@@ -76,7 +76,7 @@ class Lobby:
         for hook in self.c['D_WEBHOOKS']:
             r = requests.post(hook, json={'username': self.name, 'content': f'{user[:-5]} joined'})
         for chan in self.c['T_CHANNELS']:
-            self.telegram.send_message(text=f'{user[:-5]} joined `{self.name}`', chat_id=chan, parse_mode='Markdown')
+            self.telegram.send_message(text=f'{user[:-5]} joined {self.name}', chat_id=chan, parse_mode='Markdown')
 
 
     def new(self, creator, max=5, public=False, joined=[], expireMins=60):
