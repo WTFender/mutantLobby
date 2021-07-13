@@ -97,7 +97,7 @@ async def _createLobby(ctx, mutant2=None, mutant3=None, mutant4=None, public=Fal
     joined = []
     for m in [mutant2, mutant3, mutant4]:
         if m:
-            joined.append(m)
+            joined.append(str(m))
 
     lobby = Lobby(CFG).new(creator=creator, joined=joined, public=public)
 
