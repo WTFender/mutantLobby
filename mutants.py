@@ -27,7 +27,7 @@ class Lobby:
     def __init__(self, config, lobbyId=None):
         self.c = config
         self.telegram = telebot.TeleBot(self.c['T_TOKEN'])
-        self.db = boto3.resource('dynamodb').Table(self.c['TABLE'])
+        self.db = boto3.resource('dynamodb', region_name='us-west-2').Table(self.c['TABLE'])
         if lobbyId:
             self._load(lobbyId)
 
