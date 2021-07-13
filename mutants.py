@@ -1,4 +1,123 @@
+import time
+import uuid
+import yaml
+import boto3
+import telebot
 import secrets
+import requests
+
+
+class LobbyNotFound(Exception):
+    pass
+
+
+class LobbyUserExists(Exception):
+    pass
+
+
+class LobbyMaxUsers(Exception):
+    pass
+
+
+class LobbyPermissions(Exception):
+    pass
+
+
+class Lobby:
+    def __init__(self, config, lobbyId=None):
+        self.c = config
+        self.telegram = telebot.TeleBot(self.c['T_TOKEN'])
+        self.db = boto3.resource('dynamodb').Table(self.c['TABLE'])
+        if lobbyId:
+            self._load(lobbyId)
+
+
+    def _load(self, lobbyId):
+        l = self.db.get_item(Key={'lobbyId': lobbyId})
+        if 'Item' in l:
+            for attr in l['Item']:
+                setattr(self, attr, l['Item'][attr])
+        else:
+            raise LobbyNotFound()
+
+
+    def _save(self):
+        l = {}
+        for attr in self.__dict__:
+            val = getattr(self, attr)
+            if type(val) in [int, str, dict, list, bool]:
+                l[attr] = val
+        self.db.put_item(Item=l)
+
+
+    def _create_slots(self):
+        for user in self.c['USERS']:
+            if user not in self.joined:
+                self.slots[str(uuid.uuid4())[:8]] = user
+
+
+    def _notify_slots(self):
+        for slot in self.slots:
+            user = self.slots[slot]
+            inviteUrl = self.c['API'] + self.lobbyId + '/' + slot + '/join'
+            chatId = self.c['USERS'][user]['telegram']
+            msg = f"[Join {self.name}!]({inviteUrl})"
+            self.telegram.send_message(text=msg, chat_id=chatId, parse_mode='Markdown')
+
+
+    def _notify_create(self):
+        joined = [j[:-5] for j in self.joined]
+        msg = f'{", ".join(joined)} created {self.name}'
+        for chan in self.c['T_CHANNELS']:
+            self.telegram.send_message(text=msg, chat_id=chan, parse_mode='Markdown')
+
+
+    def _notify_join(self, user):
+        for hook in self.c['D_WEBHOOKS']:
+            r = requests.post(hook, json={'username': self.name, 'content': f'{user[:-5]} joined'})
+        for chan in self.c['T_CHANNELS']:
+            self.telegram.send_message(text=f'{user[:-5]} joined `{self.name}`', chat_id=chan, parse_mode='Markdown')
+
+
+    def new(self, creator, max=5, public=False, joined=[], expireMins=60):
+        if creator not in joined:
+            joined.append(creator)
+        setattr(self, 'creator', creator)
+        setattr(self, 'lobbyId', str(uuid.uuid4())[:8])
+        setattr(self, 'name', rand_lobby_name())
+        setattr(self, 'max', max)
+        setattr(self, 'creator', creator)
+        setattr(self, 'joined', joined)
+        setattr(self, 'expires', int(time.time()) + (60*expireMins))
+        setattr(self, 'public', public)
+        setattr(self, 'slots', {}) # self.loadSLots?
+        self._create_slots()
+        self._save()
+        self._notify_create()
+        self._notify_slots()
+        return self
+
+
+    def join(self, user):
+        if not self.public and user not in self.c['USERS']:
+            raise LobbyPermissions()
+        elif user in self.joined:
+            raise LobbyUserExists()
+        elif self.max <= len(self.joined):
+            raise LobbyMaxUsers()
+        else:
+            self.joined.append(user)
+            self._save()
+            self._notify_join(user)
+            return self
+
+
+def load_config():
+    with open('config.yml', 'r') as cfg:
+        try:
+            return yaml.safe_load(cfg)
+        except yaml.YAMLError as exc:
+            print(exc)
 
 
 def rand_lobby_name(prefix='', suffix='-mutants'):
