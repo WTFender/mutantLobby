@@ -3,6 +3,6 @@ pkg.zip
 .env/
 env/
 update.sh
-config.yml
+*config.yml
 status.txt
 __pycache__/
