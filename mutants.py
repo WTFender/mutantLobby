@@ -83,7 +83,7 @@ class Lobby:
             self.telegram.send_message(text=f'{user[:-5]} joined {self.name}', chat_id=chan, parse_mode='Markdown')
 
 
-    def new(self, creator, max=5, public=False, joined=[], expireMins=60):
+    def new(self, creator, max=5, public=False, joined=[], expireMins=120):
         if creator not in joined:
             joined.append(creator)
         setattr(self, 'creator', creator)
