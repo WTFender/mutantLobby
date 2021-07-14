@@ -39,12 +39,17 @@ OPTIONS = [
         ]
 
 
-def join_button(lobbyId):
+def buttons(lobbyId):
     return [
         create_button(
             custom_id=f'{lobbyId}-join',
             style=ButtonStyle.blue,
             label="Join Lobby"
+        ),
+        create_button(
+            custom_id=f'{lobbyId}-view',
+            style=ButtonStyle.green,
+            label="View Lobby"
         )
     ]
 
@@ -79,8 +84,8 @@ async def on_component(ctx: ComponentContext):
             await ctx.send('Too many mutants, lobby is full.', hidden=True)
 
     elif action == 'view':
-        joined = ', '.join(lobby['joined'])
-        await ctx.send(f'Mutants: {joined}', hidden=True)
+        joined = [j[:-5] for j in lobby.joined]
+        await ctx.send(f'Mutants: {", ".join(joined)}', hidden=True)
 
 
 @slash.slash(name='mutants',
@@ -102,7 +107,7 @@ async def _createLobby(ctx, mutant2=None, mutant3=None, mutant4=None, public=Fal
     lobby = Lobby(CFG).new(creator=creator, joined=joined, public=public)
 
     msg = f'Created `{lobby.name}`'
-    await ctx.send(msg, components=[create_actionrow(*join_button(lobby.lobbyId))])
+    await ctx.send(msg, components=[create_actionrow(*buttons(lobby.lobbyId))])
 
 
 client.run(CFG['D_TOKEN'])
