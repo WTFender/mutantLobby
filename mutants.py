@@ -90,7 +90,6 @@ class Lobby:
         setattr(self, 'lobbyId', str(uuid.uuid4())[:8])
         setattr(self, 'name', rand_lobby_name())
         setattr(self, 'max', max)
-        setattr(self, 'creator', creator)
         setattr(self, 'joined', joined)
         setattr(self, 'expires', int(time.time()) + (60*expireMins))
         setattr(self, 'public', public)
