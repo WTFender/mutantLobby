@@ -62,6 +62,8 @@ class Lobby:
 
     def _notify_slots(self):
         for slot in self.slots:
+            if not 'telegram' in self.c['USERS'][user]:
+                continue
             user = self.slots[slot]
             inviteUrl = self.c['API'] + self.lobbyId + '/' + slot + '/join'
             chatId = self.c['USERS'][user]['telegram']
